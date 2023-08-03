@@ -74,7 +74,7 @@ function kachifo() {
   function checkDrags() {
     for (var i=dragPos.length-2; i>=0; i--) {
       if(dist(dragPos[i], dragPos[dragPos.length-1])>MAX_SHAKE_DRAG ||
-        (dragPos[i-1].time-dragPos[i].time) > SHAKE_DRAG_MAX_STEP_STEP) {
+        (dragPos[i+1].time-dragPos[i].time) > SHAKE_DRAG_MAX_STEP_STEP) {
         dragPos.splice(0, i+1);
       }
     }
@@ -90,7 +90,7 @@ function kachifo() {
     kf.style.pointerEvents='all';
   }
 
-  var MAX_SHAKE_DRAG=window.innerWidth / 5;
+  var MAX_SHAKE_DRAG=window.innerWidth / 10;
   var SHAKE_DRAG_MAX_STEP_STEP = 300;
   var SHAKE_DRAG_TIME = 1000;
   /** @param {{x:number,y:number}} px @param {{x:number,y:number}} py */
