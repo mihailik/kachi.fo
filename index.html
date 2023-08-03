@@ -43,17 +43,44 @@ body {
 // @ts-check
 function kachifo() {
   var kf = document.createElement('div');
-  kf.style.cssText='position:fixed;z-index:1000000;right:1em;top:1em;color:silver;border:solid 1px silver;border-radius:2.5em;padding:0.3em;pointer-events:none;opacity:0.2;';
+  kf.style.cssText='position:fixed;z-index:1000000;right:1em;top:1em;'+
+  'color:silver;background:black;border:solid 1px silver;'+
+  'border-radius:2.5em;padding:0.3em;'+
+  'cursor:pointer;'+
+  'pointer-events:none;opacity:0.2;transition:opacity 300ms;';
   kf.textContent='KF';
   document.body.appendChild(kf);
   document.documentElement.addEventListener('mousemove',onMousemove);
   document.documentElement.addEventListener('touchmove', onTouchmove);
+
+  var panel = document.createElement('div');
+  panel.style.cssText='position:absolute;right:4em;top:0;'+
+  'color:tomato;background:black;border:solid 1px tomato;'+
+  'border-radius: 2.5em; padding: 0.3em;'+
+  'opacity:0; transform:translateX(300%);'+
+  'transition: opacity 400ms, transform 400ms;';
+  panel.textContent = 'B F I (panel)';
+  kf.appendChild(panel);
+
+  kf.onmousedown = kf.ontouchstart = kf.onclick = kfClick;
+
   // compression for bookmarklet
   var js = 'javascript:' + (kachifo + '').replace(/([^\\])\/\/([^\n]+)\n/g, '$1/\*$2**/').replace(/\n/g, '/\**/');
   var orig = js.replace(/^javascript:/, '').replace(/\/\*\*\//g, '\n').replace(/\/\*([^*]+)\*\*\//g, '/\/$1\n');
   if (orig.trim() === (kachifo + '').trim()) console.log('EQ\n ?\n' + js);
   else console.log(kachifo + '\n ---\n' + orig + '\n ?\n' + js);
   console.log(eval(js.replace(/^javascript:/, '')+'kachifo'));
+
+  /** @param{Event} evt*/
+  function kfClick(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    clearTimeout(kfClick.debounce);
+    kfClick.debounce=setTimeout(function() {
+      panel.style.opacity = '1';
+      panel.style.transform = 'translateX(0)';
+    }, 10);
+  }
 
   /** @typedef {{x:number,y:number,time:number}} DragPoint */
   /** @type{DragPoint[]}*/
@@ -92,7 +119,7 @@ function kachifo() {
 
   var MAX_SHAKE_DRAG=window.innerWidth / 10;
   var SHAKE_DRAG_MAX_STEP_STEP = 300;
-  var SHAKE_DRAG_TIME = 1000;
+  var SHAKE_DRAG_TIME = 2000;
   /** @param {{x:number,y:number}} px @param {{x:number,y:number}} py */
   function dist(px, py) {
     return Math.sqrt((px.x-py.x)*(px.x-py.x) + (px.y-py.y)*(px.y-py.y));
