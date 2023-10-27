@@ -75,8 +75,8 @@ function kachifo() {
   function kfClick(evt) {
     evt.preventDefault();
     evt.stopPropagation();
-    clearTimeout(kfClick.debounce);
-    kfClick.debounce=setTimeout(function() {
+    clearTimeout(/** @type {*} */(kfClick).debounce);
+    /** @type {*} */(kfClick).debounce=setTimeout(function() {
       panel.style.opacity = '1';
       panel.style.transform = 'translateX(0)';
     }, 10);
