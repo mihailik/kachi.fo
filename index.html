@@ -193,6 +193,13 @@ function kachifo() {
     return /** @type {*} */(el);
   }
 
+  function compressBookmarklet(fn) {
+    return ('javascript:' + (fn + '')
+      .replace(/([^\\])\/\/([^\n]+)\n/g, '$1/\*$2**/')
+      .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, function(comment) { return comment.replace(/[\r\n]+/g, ' '); })
+      .replace(/\n/g, '/\**/'));
+  }
+
   var MAX_SHAKE_DRAG=window.innerWidth / 10;
   var SHAKE_DRAG_MAX_STEP_STEP = 300;
   var SHAKE_DRAG_TIME = 2000;
@@ -204,7 +211,7 @@ function kachifo() {
   }
 
   // compression for bookmarklet
-  var js = 'javascript:' + (kachifo + '').replace(/([^\\])\/\/([^\n]+)\n/g, '$1/\*$2**/').replace(/\n/g, '/\**/');
+  var js = compressBookmarklet(kachifo);
   var orig = js.replace(/^javascript:/, '').replace(/\/\*\*\//g, '\n').replace(/\/\*([^*]+)\*\*\//g, '/\/$1\n');
   if (orig.trim() === (kachifo + '').trim()) console.log('EQ\n ?\n' + js);
   else console.log(kachifo + '\n ---\n' + orig + '\n ?\n' + js);
