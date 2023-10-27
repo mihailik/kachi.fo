@@ -42,27 +42,166 @@ body {
 <script>
 // @ts-check
 function kachifo() {
-  var kf = document.createElement('div');
-  kf.style.cssText='position:fixed;z-index:1000000;right:1em;top:1em;'+
-  'color:silver;background:black;border:solid 1px silver;'+
-  'border-radius:2.5em;padding:0.3em;'+
-  'cursor:pointer;'+
-  'pointer-events:none;opacity:0.2;transition:opacity 300ms;';
-  kf.textContent='KF';
-  document.body.appendChild(kf);
-  document.documentElement.addEventListener('mousemove',onMousemove);
-  document.documentElement.addEventListener('touchmove', onTouchmove);
 
-  var panel = document.createElement('div');
-  panel.style.cssText='position:absolute;right:4em;top:0;'+
-  'color:tomato;background:black;border:solid 1px tomato;'+
-  'border-radius: 2.5em; padding: 0.3em;'+
-  'opacity:0; transform:translateX(300%);'+
-  'transition: opacity 400ms, transform 400ms;';
-  panel.textContent = 'B F I (panel)';
-  kf.appendChild(panel);
+  function lampFlyout(caption) {
 
-  kf.onmousedown = kf.ontouchstart = kf.onclick = kfClick;
+    var panel;
+    var kf = elem('a', {
+      parent: document.body,
+      style: [
+        'display:block; position:fixed; z-index:1000000; right:1em; top:1em; padding:0.3em;',
+        'cursor:pointer; color:silver;background:black; border:solid 1px silver; border-radius:2.5em;',
+        'pointer-events:none; opacity:0.2; transition:opacity 300ms;'
+      ].join(' '),
+      children: [
+        caption,
+        panel = elem('div', {
+          style: [
+            'position:absolute;right:4em;top:0;',
+            // 'color:tomato;background:black;border:solid 1px tomato;',
+            // 'border-radius: 2.5em; padding: 0.3em;',
+            'opacity:0; transform:translateX(300%);',
+            'transition: opacity 400ms, transform 400ms;'
+          ].join(' ')
+        })],
+        onmousedown: kfClick, ontouchstart: kfClick, onclick: kfClick
+    });
+    document.documentElement.addEventListener('mousemove',onMousemove);
+    document.documentElement.addEventListener('touchmove', onTouchmove);
+
+    var result = { panel, onshow: /** @type {((panel: HTMLElement) => void) | undefined} */(undefined) };
+
+    /** @param{Event} evt*/
+    function kfClick(evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      clearTimeout(/** @type {*} */(kfClick).debounce);
+      /** @type {*} */(kfClick).debounce=setTimeout(function() {
+        if (panel.style.opacity === '1') return;
+        panel.style.opacity = '1';
+        panel.style.transform = 'translateX(0)';
+        var onshow = result.onshow;
+        if (typeof onshow === 'function') onshow(panel);
+      }, 10);
+    }
+
+    /** @typedef {{x:number,y:number,time:number}} DragPoint */
+    /** @type{DragPoint[]}*/
+    var dragPos=[];
+    /** @param {MouseEvent} evt */
+    function onMousemove(evt) {
+      if (Number(kf.style.opacity) > 0.9) return;
+      dragPos.push({x:evt.pageX,y:evt.pageY,time:Date.now()});
+      checkDrags();
+    }
+    /** @param {TouchEvent} evt */
+    function onTouchmove(evt) {
+      if (Number(kf.style.opacity) > 0.9) return;
+      dragPos.push({ x: evt.touches[0].pageX, y: evt.touches[0].pageY, time: Date.now() });
+      checkDrags();
+    }
+
+    function checkDrags() {
+      if (!dragPos || dragPos.length <= 1) return;
+
+      for (var i=dragPos.length-2; i>=0 && dragPos.length > 1; i--) {
+        if (dist(dragPos[i], dragPos[dragPos.length-1])>MAX_SHAKE_DRAG ||
+          (dragPos[i + 1] && dragPos[i] &&
+          (dragPos[i+1].time-dragPos[i].time) > SHAKE_DRAG_MAX_STEP_STEP)) {
+          dragPos.splice(0, i+1);
+        }
+      }
+
+      if (!dragPos || dragPos.length <= 1) return;
+
+      if (dragPos[dragPos.length-1].time - dragPos[0].time>=SHAKE_DRAG_TIME) {
+        dragPos.splice(0,dragPos.length);
+        kfOn();
+      }
+    }
+
+    function kfOn() {
+      kf.style.opacity='0.95';
+      kf.style.pointerEvents='all';
+      kf.href = js;
+    }
+
+    return result;
+  }
+
+  /**
+   * @param {TagName} tagName
+   * @param {(
+   *  Omit<Partial<HTMLElement['style']> & Partial<HTMLElementTagNameMap[TagName]>, 'children' | 'parent' | 'parentElement' | 'style'> &
+   *  {
+   *    children?: (Element | string | null | void | undefined)[] | Element | string | null | void | undefined,
+   *    parent?: Element | null, 
+   *    parentElement?: Element | null,
+   *    style?: string | Partial<HTMLElement['style']>
+   *  })=} [style]
+   * @returns {HTMLElementTagNameMap[TagName]}
+   * @template {string} TagName
+   */
+  function elem(tagName, style) {
+    var el = document.createElement(tagName);
+
+    if (style && typeof /** @type {*} */(style).appendChild === 'function') {
+      var tmp = parent;
+      style = /** @type {*} */(parent);
+      parent = tmp;
+    }
+
+    if (typeof style === 'string') {
+      if (/** @type{*} */(style).indexOf(':') >= 0) el.style.cssText = style;
+      else el.className = style;
+    }
+    else if (style) {
+      /** @type {Element | undefined} */
+      var setParent;
+      /** @type {Element[] | undefined} */
+      var appendChildren;
+      for (var key in style) {
+        if (key === 'parent' || key === 'parentElement') {
+          setParent = /** @type {*} */(style[key]);
+          continue;
+        }
+        else if (key === 'children') {
+          appendChildren = /** @type {*} */(style[key]);
+          continue;
+        }
+        else if (style[key] == null || (typeof style[key] === 'function' && !(key in el))) continue;
+
+        if (key in el) el[key] = style[key];
+        else if (key in el.style) el.style[key] = /** @type {*} */(style[key]);
+      }
+
+      if (appendChildren) {
+        for (const child of Array.isArray(appendChildren) || /** @type {*} */(appendChildren).length > 0 ? appendChildren : [appendChildren]) {
+          if (child == null) continue;
+          if (typeof child === 'string') {
+            const childText = document.createTextNode(child);
+            el.appendChild(childText);
+          } else {
+            el.appendChild(child);
+          }
+        }
+      }
+
+      if (setParent && typeof setParent.appendChild === 'function') setParent.appendChild(el);
+    }
+
+    return /** @type {*} */(el);
+  }
+
+  var MAX_SHAKE_DRAG=window.innerWidth / 10;
+  var SHAKE_DRAG_MAX_STEP_STEP = 300;
+  var SHAKE_DRAG_TIME = 2000;
+  /** @param {{x:number,y:number}} px @param {{x:number,y:number}} py */
+
+  function dist(px, py) {
+    if (!px || !py) return 10000;
+    return Math.sqrt((px.x-py.x)*(px.x-py.x) + (px.y-py.y)*(px.y-py.y));
+  }
 
   // compression for bookmarklet
   var js = 'javascript:' + (kachifo + '').replace(/([^\\])\/\/([^\n]+)\n/g, '$1/\*$2**/').replace(/\n/g, '/\**/');
@@ -70,78 +209,15 @@ function kachifo() {
   if (orig.trim() === (kachifo + '').trim()) console.log('EQ\n ?\n' + js);
   else console.log(kachifo + '\n ---\n' + orig + '\n ?\n' + js);
   try {
-    console.log(eval(js.replace(/^javascript:/, '')+'kachifo'));
+    console.log(eval(js.replace(/^javascript:/, '') + 'kachifo'));
   } catch (evalErr) {
     console.log('compression for bookmarklet verification: ', evalErr);
   }
 
-  /** @param{Event} evt*/
-  function kfClick(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    clearTimeout(/** @type {*} */(kfClick).debounce);
-    /** @type {*} */(kfClick).debounce=setTimeout(function() {
-      panel.style.opacity = '1';
-      panel.style.transform = 'translateX(0)';
-      panel.onclick = function() {
-        panel.textContent = 'B F I ';
-        var link = document.createElement('a');
-        link.href = js;
-        link.textContent = '(link)';
-        panel.appendChild(link);
-        prompt('Bookmarklet address:', js);
-      };
-    }, 10);
-  }
+  lampFlyout('KF').onshow = function(panel) {
+    panel.textContent = 'B F I (panel)';
+  };
 
-  /** @typedef {{x:number,y:number,time:number}} DragPoint */
-  /** @type{DragPoint[]}*/
-  var dragPos=[];
-  /** @param {MouseEvent} evt */
-  function onMousemove(evt) {
-    if (Number(kf.style.opacity) > 0.9) return;
-    dragPos.push({x:evt.pageX,y:evt.pageY,time:Date.now()});
-    checkDrags();
-  }
-  /** @param {TouchEvent} evt */
-  function onTouchmove(evt) {
-    if (Number(kf.style.opacity) > 0.9) return;
-    dragPos.push({ x: evt.touches[0].pageX, y: evt.touches[0].pageY, time: Date.now() });
-    checkDrags();
-  }
-
-  function checkDrags() {
-    if (!dragPos || dragPos.length <= 1) return;
-
-    for (var i=dragPos.length-2; i>=0 && dragPos.length > 1; i--) {
-      if (dist(dragPos[i], dragPos[dragPos.length-1])>MAX_SHAKE_DRAG ||
-        (dragPos[i + 1] && dragPos[i] &&
-        (dragPos[i+1].time-dragPos[i].time) > SHAKE_DRAG_MAX_STEP_STEP)) {
-        dragPos.splice(0, i+1);
-      }
-    }
-
-    if (!dragPos || dragPos.length <= 1) return;
-
-    if (dragPos[dragPos.length-1].time - dragPos[0].time>=SHAKE_DRAG_TIME) {
-      dragPos.splice(0,dragPos.length);
-      kfOn();
-    }
-  }
-
-  function kfOn() {
-    kf.style.opacity='0.95';
-    kf.style.pointerEvents='all';
-  }
-
-  var MAX_SHAKE_DRAG=window.innerWidth / 10;
-  var SHAKE_DRAG_MAX_STEP_STEP = 300;
-  var SHAKE_DRAG_TIME = 2000;
-  /** @param {{x:number,y:number}} px @param {{x:number,y:number}} py */
-  function dist(px, py) {
-    if (!px || !py) return 10000;
-    return Math.sqrt((px.x-py.x)*(px.x-py.x) + (px.y-py.y)*(px.y-py.y));
-  }
 } kachifo();
 </script>
 </body>
