@@ -69,7 +69,11 @@ function kachifo() {
   var orig = js.replace(/^javascript:/, '').replace(/\/\*\*\//g, '\n').replace(/\/\*([^*]+)\*\*\//g, '/\/$1\n');
   if (orig.trim() === (kachifo + '').trim()) console.log('EQ\n ?\n' + js);
   else console.log(kachifo + '\n ---\n' + orig + '\n ?\n' + js);
-  console.log(eval(js.replace(/^javascript:/, '')+'kachifo'));
+  try {
+    console.log(eval(js.replace(/^javascript:/, '')+'kachifo'));
+  } catch (evalErr) {
+    console.log('compression for bookmarklet verification: ', evalErr);
+  }
 
   /** @param{Event} evt*/
   function kfClick(evt) {
