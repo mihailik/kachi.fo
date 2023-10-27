@@ -106,7 +106,7 @@ function kachifo() {
       }
     }
 
-    if (dragPos[dragPos.length-1].time - dragPos[0].time>=SHAKE_DRAG_TIME) {
+    if (dragPos.length > 1 && dragPos[dragPos.length-1].time - dragPos[0].time>=SHAKE_DRAG_TIME) {
       dragPos.splice(0,dragPos.length);
       kfOn();
     }
