@@ -79,6 +79,14 @@ function kachifo() {
     /** @type {*} */(kfClick).debounce=setTimeout(function() {
       panel.style.opacity = '1';
       panel.style.transform = 'translateX(0)';
+      panel.onclick = function() {
+        panel.textContent = 'B F I ';
+        var link = document.createElement('a');
+        link.href = js;
+        link.textContent = '(link)';
+        panel.appendChild(link);
+        prompt('Bookmarklet address:', js);
+      };
     }, 10);
   }
 
@@ -101,9 +109,10 @@ function kachifo() {
   function checkDrags() {
     if (!dragPos || dragPos.length <= 1) return;
 
-    for (var i=dragPos.length-2; i>=0; i--) {
-      if(dist(dragPos[i], dragPos[dragPos.length-1])>MAX_SHAKE_DRAG ||
-        (dragPos[i+1].time-dragPos[i].time) > SHAKE_DRAG_MAX_STEP_STEP) {
+    for (var i=dragPos.length-2; i>=0 && dragPos.length > 1; i--) {
+      if (dist(dragPos[i], dragPos[dragPos.length-1])>MAX_SHAKE_DRAG ||
+        (dragPos[i + 1] && dragPos[i] &&
+        (dragPos[i+1].time-dragPos[i].time) > SHAKE_DRAG_MAX_STEP_STEP)) {
         dragPos.splice(0, i+1);
       }
     }
