@@ -122,6 +122,7 @@ function kachifo() {
   var SHAKE_DRAG_TIME = 2000;
   /** @param {{x:number,y:number}} px @param {{x:number,y:number}} py */
   function dist(px, py) {
+    if (!px || !py) return 10000;
     return Math.sqrt((px.x-py.x)*(px.x-py.x) + (px.y-py.y)*(px.y-py.y));
   }
 } kachifo();
